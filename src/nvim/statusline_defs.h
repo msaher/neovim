@@ -64,3 +64,5 @@ typedef struct {
   foldinfo_T foldinfo;                 ///< fold information
   SignTextAttrs *sattrs;               ///< sign attributes
 } statuscol_T;
+
+char *statusline_default_fmt(void);
