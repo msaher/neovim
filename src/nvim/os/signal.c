@@ -1,25 +1,25 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check
-// it. PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-
 #include <assert.h>
 #include <stdbool.h>
-#include <uv.h>
-#ifndef WIN32
-# include <signal.h>  // for sigset_t
+#include <stdio.h>
+
+#ifndef MSWIN
+# include <signal.h>
 #endif
 
-#include "nvim/ascii.h"
+#include "nvim/autocmd.h"
+#include "nvim/autocmd_defs.h"
+#include "nvim/buffer_defs.h"
 #include "nvim/eval.h"
-#include "nvim/event/loop.h"
+#include "nvim/event/defs.h"
 #include "nvim/event/signal.h"
-#include "nvim/fileio.h"
 #include "nvim/globals.h"
 #include "nvim/log.h"
 #include "nvim/main.h"
-#include "nvim/memline.h"
-#include "nvim/memory.h"
 #include "nvim/os/signal.h"
-#include "nvim/vim.h"
+
+#ifdef SIGPWR
+# include "nvim/memline.h"
+#endif
 
 static SignalWatcher spipe, shup, squit, sterm, susr1, swinch;
 #ifdef SIGPWR
@@ -34,7 +34,7 @@ static bool rejecting_deadly;
 
 void signal_init(void)
 {
-#ifndef WIN32
+#ifndef MSWIN
   // Ensure a clean slate by unblocking all signals. For example, if SIGCHLD is
   // blocked, libuv may hang after spawning a subprocess on Linux. #5230
   sigset_t mask;
@@ -165,8 +165,7 @@ static char *signal_name(int signum)
 // This function handles deadly signals.
 // It tries to preserve any swap files and exit properly.
 // (partly from Elvis).
-// NOTE: Avoid unsafe functions, such as allocating memory, they can result in
-// a deadlock.
+// NOTE: this is scheduled on the event loop, not called directly from a signal handler.
 static void deadly_signal(int signum)
   FUNC_ATTR_NORETURN
 {
@@ -174,13 +173,12 @@ static void deadly_signal(int signum)
   set_vim_var_nr(VV_DYING, 1);
   v_dying = 1;
 
-  WLOG("got signal %d (%s)", signum, signal_name(signum));
+  ILOG("got signal %d (%s)", signum, signal_name(signum));
 
-  snprintf((char *)IObuff, sizeof(IObuff), "Vim: Caught deadly signal '%s'\r\n",
-           signal_name(signum));
+  snprintf(IObuff, IOSIZE, "Vim: Caught deadly signal '%s'\r\n", signal_name(signum));
 
   // Preserve files and exit.
-  preserve_exit();
+  preserve_exit(IObuff);
 }
 
 static void on_signal(SignalWatcher *handle, int signum, void *data)
@@ -210,14 +208,12 @@ static void on_signal(SignalWatcher *handle, int signum, void *data)
     break;
 #ifdef SIGUSR1
   case SIGUSR1:
-    apply_autocmds(EVENT_SIGNAL, (char_u *)"SIGUSR1", curbuf->b_fname, true,
-                   curbuf);
+    apply_autocmds(EVENT_SIGNAL, "SIGUSR1", curbuf->b_fname, true, curbuf);
     break;
 #endif
 #ifdef SIGWINCH
   case SIGWINCH:
-    apply_autocmds(EVENT_SIGNAL, (char_u *)"SIGWINCH", curbuf->b_fname, true,
-                   curbuf);
+    apply_autocmds(EVENT_SIGNAL, "SIGWINCH", curbuf->b_fname, true, curbuf);
     break;
 #endif
   default:

@@ -14,7 +14,7 @@ PenaltyReturnTypeOnItsOwnLine: 200
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-BinPackParameters: false
+BinPackParameters: true
 BreakBeforeBinaryOperators: true
 BreakBeforeTernaryOperators: true
 ContinuationIndentWidth: 2
@@ -23,7 +23,7 @@ AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: No
 AlwaysBreakTemplateDeclarations: No
 AlignEscapedNewlines: DontAlign
-BinPackArguments: false
+BinPackArguments: true
 BraceWrapping:
   AfterClass:      false
   AfterControlStatement: false
@@ -45,8 +45,10 @@ IncludeCategories:
     Priority:        1
     SortPriority:    1
     CaseSensitive:   false
+AlignConsecutiveMacros: AcrossEmptyLines
 IndentPPDirectives: AfterHash
 SpaceBeforeParens: ControlStatementsExceptControlMacros
+PPIndentWidth: 1
 ForEachMacros:
   - FOR_ALL_AUEVENTS
   - FOR_ALL_AUPATS_IN_EVENT
